@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: observability-app
+  namespace: observability
+  labels:
+    app: observability-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: observability-app
+  
+  template:
+    metadata:
+      labels:
+        app: observability-app
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
+  
+    spec:
+      containers:
+        - name: observability-app
+          image: 804867352391.dkr.ecr.us-east-1.amazonaws.com/dev/observability-stack:v2
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: "TCP"
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
